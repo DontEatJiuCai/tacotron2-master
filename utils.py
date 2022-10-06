@@ -1,0 +1,35 @@
+import numpy as np
+from scipy.io.wavfile import read#读取音频文件
+import torch
+
+
+def get_mask_from_lengths(lengths):
+    max_len = torch.max(lengths).item()
+    ids = torch.arange(0, max_len, out=torch.cuda.LongTensor(max_len))
+    mask = (ids < lengths.unsqueeze(1)).bool()
+    return mask
+
+
+def load_wav_to_torch(full_path):  #√
+    #读取采样率和音频数据
+    sampling_rate, data = read(full_path)
+    return torch.FloatTensor(data.astype(np.float32)), sampling_rate
+
+
+def load_filepaths_and_text(filename, split="|"):
+    #获取音频文件名和对应文本
+    """
+    前面是音频文件名，
+    后面是对应的文本
+    """
+    with open(filename, encoding='utf-8') as f:
+        filepaths_and_text = [line.strip().split(split) for line in f]
+    return filepaths_and_text
+
+
+def to_gpu(x):
+    x = x.contiguous()
+
+    if torch.cuda.is_available():
+        x = x.cuda(non_blocking=True)
+    return torch.autograd.Variable(x)
